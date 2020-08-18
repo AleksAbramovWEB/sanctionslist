@@ -29,7 +29,7 @@
 
 
         public function __construct(){
-            if (!file_exists('core/configs/db.conf.php'))  throw new \Exception("___fail config Db not found!");
+
             $this->config = require_once 'configs/db.conf.php';
             $this->pdo = new \PDO(
         "mysql:host={$this->config['host']};
