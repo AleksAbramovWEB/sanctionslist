@@ -7,8 +7,7 @@ RewriteCond %{REQUEST_FILENAME%} !-f
 
 RewriteRule ^(.*) index.php?url=$1 [L,QSA]
 
-php_value session.gc_maxlifetime 259200
-php_value session.cookie_lifetime 259200
+
 
 RewriteCond %{HTTP_USER_AGENT} (libwww-perl|wget|python|nikto|curl|scan|java|winhttp|clshttp|loader) [NC,OR]
 RewriteCond %{HTTP_USER_AGENT} (<|>|'|%0A|%0D|%27|%3C|%3E|%00) [NC,OR]
