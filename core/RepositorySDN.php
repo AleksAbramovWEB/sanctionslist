@@ -63,14 +63,15 @@
             $alt = $this->getAddAlt('sdn_alt', $ent_num);
 
             foreach ($data as &$std_data){
+                foreach ($alt as $std_alt)
+                    if ($std_data->ent_num === $std_alt->ent_num)
+                        $std_data->alt[] = $std_alt;
                 foreach ($add as $std_add) {
                     if ($std_data->ent_num === $std_add->ent_num) {
                         if (is_null($std_add->address) and is_null($std_add->address) and is_null($std_add->address) and is_null($std_add->address)) continue;
                         $std_data->add[] = $std_add;
                     }
-                }foreach ($alt as $std_alt)
-                    if ($std_data->ent_num === $std_alt->ent_num)
-                        $std_data->alt[] = $std_alt;
+                }
             }
 
             $this->data = $data;
