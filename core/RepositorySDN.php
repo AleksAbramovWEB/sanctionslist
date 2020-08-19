@@ -115,7 +115,7 @@
                          (SELECT COUNT(*)  FROM `sdn_alt`
                          LEFT JOIN `sdn`  on sdn_alt.ent_num = sdn.ent_num
                          LEFT JOIN sdn_comments sc on sc.ent_num = sdn.ent_num
-                         WHERE ( {$this->search_alt} ) AND `sdn_alt`.`ent_num` <> `sdn`.`ent_num`
+                         WHERE ( {$this->search_alt} ) 
                          )
             ");
 
