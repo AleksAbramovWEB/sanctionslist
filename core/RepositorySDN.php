@@ -8,6 +8,7 @@
         private $until_sdn = 10;
         private $count;
         private $search = '';
+        private $search_alt = '';
 
         public function __construct()
         {
@@ -37,14 +38,33 @@
         }
 
         private function getSdnAll(){
+            if (empty($this->search)){
+                $sql = "
+                     SELECT `sdn`.*, sc.comment FROM `sdn`
+                     LEFT JOIN sdn_comments sc on sdn.ent_num = sc.ent_num          
+                     ORDER BY `sdn`.`ent_num` ASC 
+                     LIMIT {$this->from_sdn} , 10
+                ";
+            }else {
+                $sql = "(
+                     SELECT `sdn`.*, sc.comment FROM `sdn`
+                     LEFT JOIN sdn_comments sc on sdn.ent_num = sc.ent_num
+                     WHERE {$this->search}
+                     )
+                     UNION ALL
+                     (
+                     SELECT  sdn.*, sc.comment FROM `sdn_alt`
+                     LEFT JOIN `sdn`  on sdn_alt.ent_num = sdn.ent_num
+                     LEFT JOIN sdn_comments sc on sc.ent_num = sdn.ent_num
+                     WHERE ( {$this->search_alt} ) 
+                     )
+                     LIMIT {$this->from_sdn} , 10
+                ";
+            }
 
-            $sql = "
-                 SELECT `sdn`.*, sc.comment FROM `sdn`
-                 LEFT JOIN sdn_comments sc on sdn.ent_num = sc.ent_num          
-                 {$this->search} 
-                 ORDER BY `sdn`.`ent_num` ASC 
-                 LIMIT {$this->from_sdn} , 10
-            ";
+
+
+
             $data = Db::getDB()->getAllStdClass($sql);
 
 
@@ -84,11 +104,21 @@
         }
 
         private function countSDN(){
-                $this->count = Db::getDB()->queryFetchColumn("
-                SELECT COUNT(*) FROM `sdn`
-                 LEFT JOIN sdn_comments sc on sdn.ent_num = sc.ent_num
-                 {$this->search} 
-                 ORDER BY `sdn`.`ent_num` ASC ");
+            if (empty($this->search))
+                 $this->count = Db::getDB()->queryFetchColumn("SELECT COUNT(*) FROM `sdn`");
+            else $this->count = Db::getDB()->queryFetchColumn("
+                    SELECT (
+                         SELECT COUNT(*)  FROM `sdn`
+                         LEFT JOIN sdn_comments sc on sdn.ent_num = sc.ent_num
+                         WHERE {$this->search} )
+                         +
+                         (SELECT COUNT(*)  FROM `sdn_alt`
+                         LEFT JOIN `sdn`  on sdn_alt.ent_num = sdn.ent_num
+                         LEFT JOIN sdn_comments sc on sc.ent_num = sdn.ent_num
+                         WHERE ( {$this->search_alt} ) AND `sdn_alt`.`ent_num` <> `sdn`.`ent_num`
+                         )
+            ");
+
         }
 
 
@@ -110,16 +140,14 @@
         private function search(){
             $search = filter_var(trim($_POST['search']),FILTER_SANITIZE_STRING);
             $search_array = preg_split("/[\s,-]+/", $search);
-
             if (!is_array($search_array)) return;
-            $this->search = " LEFT JOIN sdn_alt a on sdn.ent_num = a.ent_num WHERE ";
             foreach ($search_array as $str) {
                 $str = strtoupper(preg_replace("/[^\p{L}]/u","", $str));
-                $this->search .= " ( 
-                LOWER(`sdn`.`sdn_name`) LIKE '%$str%' OR 
-                ( LOWER(`a`.`alt_name`) LIKE '%$str%' AND `a`.`ent_num` = `sdn`.`ent_num`) ) OR ";
+                $this->search .= " LOWER(`sdn`.`sdn_name`) LIKE '%$str%' OR ";
+                $this->search_alt .= " LOWER(`sdn_alt`.`alt_name`) LIKE '%$str%' OR ";
             }
             $this->search = substr($this->search, 0 , -3);
+            $this->search_alt = substr($this->search_alt, 0 , -3);
 
         }
 
