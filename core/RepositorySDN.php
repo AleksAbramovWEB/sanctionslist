@@ -47,13 +47,13 @@
                 ";
             }else {
                 $sql = "(
-                     SELECT `sdn`.*, sc.comment FROM `sdn`
+                     SELECT DISTINCT `sdn`.*, sc.comment FROM `sdn`
                      LEFT JOIN sdn_comments sc on sdn.ent_num = sc.ent_num
                      WHERE {$this->search}
                      )
-                     UNION ALL
+                     UNION DISTINCT
                      (
-                     SELECT  sdn.*, sc.comment FROM `sdn_alt`
+                     SELECT DISTINCT  sdn.*, sc.comment FROM `sdn_alt`
                      LEFT JOIN `sdn`  on sdn_alt.ent_num = sdn.ent_num
                      LEFT JOIN sdn_comments sc on sc.ent_num = sdn.ent_num
                      WHERE ( {$this->search_alt} ) 
@@ -106,18 +106,20 @@
         private function countSDN(){
             if (empty($this->search))
                  $this->count = Db::getDB()->queryFetchColumn("SELECT COUNT(*) FROM `sdn`");
-            else $this->count = Db::getDB()->queryFetchColumn("
-                    SELECT (
-                         SELECT COUNT(*)  FROM `sdn`
-                         LEFT JOIN sdn_comments sc on sdn.ent_num = sc.ent_num
-                         WHERE {$this->search} )
-                         +
-                         (SELECT COUNT(*)  FROM `sdn_alt`
-                         LEFT JOIN `sdn`  on sdn_alt.ent_num = sdn.ent_num
-                         LEFT JOIN sdn_comments sc on sc.ent_num = sdn.ent_num
-                         WHERE ( {$this->search_alt} ) 
-                         )
-            ");
+            else {
+                $this->count = Db::getDB()->queryFetchColumn("
+                SELECT COUNT(*) FROM (
+                     SELECT DISTINCT `sdn`.*, sc.comment FROM `sdn`
+                     LEFT JOIN sdn_comments sc on sdn.ent_num = sc.ent_num
+                     WHERE {$this->search}
+                     UNION DISTINCT
+                     SELECT DISTINCT  sdn.*, sc.comment FROM `sdn_alt`
+                     LEFT JOIN `sdn`  on sdn_alt.ent_num = sdn.ent_num
+                     LEFT JOIN sdn_comments sc on sc.ent_num = sdn.ent_num
+                     WHERE ( {$this->search_alt} ) 
+                     ) t
+                ");
+            }
 
         }
 
